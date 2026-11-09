@@ -71,6 +71,13 @@ class Renderer {
         //     * project to 2D
         //     * translate/scale to viewport (i.e. window)
         //     * draw line
+        let models = this.scene.models;
+        for(let i = 0; i < models.length; i++){
+            for(let j = 0; j < models[i].vertices.length; j++){
+                //transform endpoints to canonical view volume
+            }
+            
+        }
     }
 
     // Get outcode for a vertex
