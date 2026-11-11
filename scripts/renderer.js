@@ -72,11 +72,31 @@ class Renderer {
         //     * translate/scale to viewport (i.e. window)
         //     * draw line
         let models = this.scene.models;
+        let nper = CG.mat4x4Perspective(this.scene.view.prp, this.scene.view.srp, 
+                    this.scene.view.vup, this.scene.view.clip);
+        let mper = CG.mat4x4MPer();
+        let v = CG.mat4x4Viewport(Math.abs(this.scene.clip[0] - this.scene.clip[1]),
+            Math.abs(this.scene.clip[2] - this.scene.clip[3]));
         for(let i = 0; i < models.length; i++){
+            let newModel = {
+                type: models[i].type,
+                vertices: [],
+                edges: models[i].edges
+            };
             for(let j = 0; j < models[i].vertices.length; j++){
-                //transform endpoints to canonical view volume
+                let temp = new Matrix(4,4);
+                temp.values =   [
+                                models[i].vertices[j].rawArray()[0], 0, 0, 0,
+                                0, models[i].vertices[j].rawArray()[1], 0, 0,
+                                0, 0, models[i].vertices[j].rawArray()[2], 0,
+                                0, 0, 0, models[i].vertices[j].rawArray()[3]];
+                //console.log(temp.mult(nper));
+                newModel.vertices = newModel.vertices.push(temp);
             }
-            
+            for(let k = 0; k < newModel.edges.length; k++){
+                let temp = new Matrix(4,4);
+                
+            }
         }
     }
 
