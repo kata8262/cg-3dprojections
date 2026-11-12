@@ -60,17 +60,96 @@ class Renderer {
 
     //
     draw() {
+        
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        let view = this.scene.view;
+        let viewTransform = CG.mat4x4Perspective(view.prp, view.srp, view.vup, view.clip);
 
-        // TODO: implement drawing here!
-        // For each model
-        //   * For each vertex
-        //     * transform endpoints to canonical view volume
-        //   * For each line segment in each edge
-        //     * clip in 3D
-        //     * project to 2D
-        //     * translate/scale to viewport (i.e. window)
-        //     * draw line
+        // project z=-1 then to canvas
+        let projection = CG.mat4x4MPer();
+        let viewport = CG.mat4x4Viewport(this.canvas.width, this.canvas.height);
+
+        // near plane z by 1/far
+        let z_min = -view.clip[4] / view.clip[5];
+
+        for (let i = 0; i < this.scene.models.length; i++) {
+            let model = this.scene.models[i];
+
+            let transformedVertices = [];
+
+            //model transform first, then the view transform.
+            for (let j = 0; j < model.vertices.length; j++) {
+                let vertex = Matrix.multiply([
+                    viewTransform,
+                    model.matrix,
+                    model.vertices[j]
+                ]);
+
+                transformedVertices.push(vertex);
+            }
+
+            // edges = list -> vertix indices
+            for (let j = 0; j < model.edges.length; j++) {
+                let edge = model.edges[j];
+
+                // ddddddddddddddraw a segment between each consecutive pair.
+                for (let k = 0; k < edge.length - 1; k++) {
+                    let line = {
+                        pt0: transformedVertices[edge[k]],
+                        pt1: transformedVertices[edge[k + 1]]
+                    };
+
+                    // Jack my current code does NOT clip. when you get
+                    // clipping to work, uncomment the code line bellow
+                    // and delete the "let clippedLine = line"
+
+                    //let clippedLine = this.clipLinePerspective(line, z_min);
+                    let clippedLine = line;
+
+                    // rejected segments have nothing to draw. 
+                    if (clippedLine === null) {
+                        continue;
+                    }            
+
+                    let p0 = CG.Vector4(clippedLine.pt0.x, clippedLine.pt0.y, clippedLine.pt0.z, 1);
+                    let p1 = CG.Vector4(clippedLine.pt1.x, clippedLine.pt1.y, clippedLine.pt1.z, 1);
+
+                    p0 = Matrix.multiply([projection, p0]);
+                    p1 = Matrix.multiply([projection, p1]);         
+                    
+                    p0.scale(1 / p0.w);
+                    p1.scale(1 / p1.w);
+
+                    // converts to pixesl
+                    p0 = Matrix.multiply([viewport, p0]);
+                    p1 = Matrix.multiply([viewport, p1]);
+
+                    this.drawLine(p0.x, p0.y, p1.x, p1.y);
+
+
+
+                    // Bellow is temp code to mark vertices to make it less
+                    // annoying to compare and preview the 3d model. idk how
+                    // to fix the flipped numbers without messing with the css
+                    
+                    this.ctx.fillStyle = '#0000FF';
+                    this.ctx.font = '14px Arial';
+
+                    this.ctx.fillText(
+                        edge[k].toString(),
+                        p0.x + 6,
+                        p0.y - 6
+                    );
+
+                    this.ctx.fillText(
+                        edge[k + 1].toString(),
+                        p1.x + 6,
+                        p1.y - 6
+                    );                    
+
+                }
+            }
+        }
     }
 
     // Get outcode for a vertex
