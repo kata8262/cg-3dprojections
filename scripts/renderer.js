@@ -18,7 +18,7 @@ class Renderer {
         this.canvas.height = canvas.height;
         this.ctx = this.canvas.getContext('2d');
         this.scene = this.processScene(scene);
-        this.enable_animation = false;  // <-- disabled for easier debugging; enable for animation
+        this.enable_animation = true;  // <-- disabled for easier debugging; enable for animation
         this.start_time = null;
         this.prev_time = null;
     }
@@ -26,11 +26,22 @@ class Renderer {
     //
     updateTransforms(time, delta_time) {
         // TODO: update any transformations needed for animation
+        for (let i = 0; i < this.scene.models.length; i++) {
+            if(this.scene.models[i].animation != null){
+
+            }
+        }
     }
 
     //
     rotateLeft() {
-
+        let theta = Math.PI / 128;
+        let vec = new Vector(3);
+        vec.x = this.scene.view.srp.data[0][0] - this.scene.view.prp.data[0][0];
+        vec.y = this.scene.view.srp.data[1][0] - this.scene.view.prp.data[1][0];
+        vec.z = this.scene.view.srp.data[2][0] - this.scene.view.prp.data[2][0];
+        let cross = vec.cross(this.scene.view.vup);
+        
     }
     
     //
@@ -40,22 +51,56 @@ class Renderer {
     
     //
     moveLeft() {
-
+        let vec = new Vector(3);
+        vec.x = this.scene.view.srp.data[0][0] - this.scene.view.prp.data[0][0];
+        vec.y = this.scene.view.srp.data[1][0] - this.scene.view.prp.data[1][0];
+        vec.z = this.scene.view.srp.data[2][0] - this.scene.view.prp.data[2][0];
+        vec = vec.cross(this.scene.view.vup);
+        vec.normalize();
+        this.scene.view.srp.data = [[this.scene.view.srp.data[0][0] - vec.x], [this.scene.view.srp.data[1][0] - vec.y], 
+            [this.scene.view.srp.data[2][0] - vec.z]];
+        this.scene.view.prp.data = [[this.scene.view.prp.data[0][0] - vec.x], [this.scene.view.prp.data[1][0] - vec.y], 
+            [this.scene.view.prp.data[2][0] - vec.z]];
     }
     
     //
     moveRight() {
-
+        let vec = new Vector(3);
+        vec.x = this.scene.view.srp.data[0][0] - this.scene.view.prp.data[0][0];
+        vec.y = this.scene.view.srp.data[1][0] - this.scene.view.prp.data[1][0];
+        vec.z = this.scene.view.srp.data[2][0] - this.scene.view.prp.data[2][0];
+        vec = vec.cross(this.scene.view.vup);
+        vec.normalize();
+        this.scene.view.srp.data = [[this.scene.view.srp.data[0][0] + vec.x], [this.scene.view.srp.data[1][0] + vec.y], 
+            [this.scene.view.srp.data[2][0] + vec.z]];
+        this.scene.view.prp.data = [[this.scene.view.prp.data[0][0] + vec.x], [this.scene.view.prp.data[1][0] + vec.y], 
+            [this.scene.view.prp.data[2][0] + vec.z]];
     }
     
     //
     moveBackward() {
-
+        let vec = new Vector(3);
+        vec.x = this.scene.view.srp.data[0][0] - this.scene.view.prp.data[0][0];
+        vec.y = this.scene.view.srp.data[1][0] - this.scene.view.prp.data[1][0];
+        vec.z = this.scene.view.srp.data[2][0] - this.scene.view.prp.data[2][0];
+        vec.normalize();
+        this.scene.view.srp.data = [[this.scene.view.srp.data[0][0] - vec.x], [this.scene.view.srp.data[1][0] - vec.y], 
+            [this.scene.view.srp.data[2][0] - vec.z]];
+        this.scene.view.prp.data = [[this.scene.view.prp.data[0][0] - vec.x], [this.scene.view.prp.data[1][0] - vec.y], 
+            [this.scene.view.prp.data[2][0] - vec.z]];
     }
     
     //
     moveForward() {
-
+        let vec = new Vector(3);
+        vec.x = this.scene.view.srp.data[0][0] - this.scene.view.prp.data[0][0];
+        vec.y = this.scene.view.srp.data[1][0] - this.scene.view.prp.data[1][0];
+        vec.z = this.scene.view.srp.data[2][0] - this.scene.view.prp.data[2][0];
+        vec.normalize();
+        this.scene.view.srp.data = [[this.scene.view.srp.data[0][0] + vec.x], [this.scene.view.srp.data[1][0] + vec.y], 
+            [this.scene.view.srp.data[2][0] + vec.z]];
+        this.scene.view.prp.data = [[this.scene.view.prp.data[0][0] + vec.x], [this.scene.view.prp.data[1][0] + vec.y], 
+            [this.scene.view.prp.data[2][0] + vec.z]];
     }
 
     //
@@ -64,7 +109,7 @@ class Renderer {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         let view = this.scene.view;
         let viewTransform = CG.mat4x4Perspective(view.prp, view.srp, view.vup, view.clip);
-
+        
         // project z=-1 then to canvas
         let projection = CG.mat4x4MPer();
         let viewport = CG.mat4x4Viewport(this.canvas.width, this.canvas.height);
@@ -74,6 +119,19 @@ class Renderer {
 
         for (let i = 0; i < this.scene.models.length; i++) {
             let model = this.scene.models[i];
+
+            if(model.type == "cube"){
+
+            }
+            else if(model.type == "cone"){
+
+            }
+            else if(model.type == "cylinder"){
+
+            }
+            else if(model.type == "sphere"){
+
+            }
 
             let transformedVertices = [];
 
@@ -190,6 +248,18 @@ class Renderer {
         let out1 = this.outcodePerspective(p1, z_min);
         
         // TODO: implement clipping here!
+        if((parseInt(out0.toString(2), 2) | parseInt(out1.toString(2), 2)) == 0){
+            result = {
+                pt0: p0,
+                pt1: p1
+            };
+        }
+        else if((parseInt(out0.toString(2), 2) & parseInt(out1.toString(2), 2)) != 0){
+            //do nothing, result is already set to null
+        }
+        else{
+
+        }
         
         return result;
     }
