@@ -18,7 +18,7 @@ class Renderer {
         this.canvas.height = canvas.height;
         this.ctx = this.canvas.getContext('2d');
         this.scene = this.processScene(scene);
-        this.enable_animation = false;  // <-- disabled for easier debugging; enable for animation
+        this.enable_animation = true;  // <-- disabled for easier debugging; enable for animation
         this.start_time = null;
         this.prev_time = null;
     }
@@ -26,11 +26,22 @@ class Renderer {
     //
     updateTransforms(time, delta_time) {
         // TODO: update any transformations needed for animation
+        for (let i = 0; i < this.scene.models.length; i++) {
+            if(this.scene.models[i].animation != null){
+
+            }
+        }
     }
 
     //
     rotateLeft() {
-
+        let theta = Math.PI / 128;
+        let vec = new Vector(3);
+        vec.x = this.scene.view.srp.data[0][0] - this.scene.view.prp.data[0][0];
+        vec.y = this.scene.view.srp.data[1][0] - this.scene.view.prp.data[1][0];
+        vec.z = this.scene.view.srp.data[2][0] - this.scene.view.prp.data[2][0];
+        let cross = vec.cross(this.scene.view.vup);
+        
     }
     
     //
@@ -40,37 +51,220 @@ class Renderer {
     
     //
     moveLeft() {
-
+        let vec = new Vector(3);
+        vec.x = this.scene.view.srp.data[0][0] - this.scene.view.prp.data[0][0];
+        vec.y = this.scene.view.srp.data[1][0] - this.scene.view.prp.data[1][0];
+        vec.z = this.scene.view.srp.data[2][0] - this.scene.view.prp.data[2][0];
+        vec = vec.cross(this.scene.view.vup);
+        vec.normalize();
+        this.scene.view.srp.data = [[this.scene.view.srp.data[0][0] - vec.x], [this.scene.view.srp.data[1][0] - vec.y], 
+            [this.scene.view.srp.data[2][0] - vec.z]];
+        this.scene.view.prp.data = [[this.scene.view.prp.data[0][0] - vec.x], [this.scene.view.prp.data[1][0] - vec.y], 
+            [this.scene.view.prp.data[2][0] - vec.z]];
     }
     
     //
     moveRight() {
-
+        let vec = new Vector(3);
+        vec.x = this.scene.view.srp.data[0][0] - this.scene.view.prp.data[0][0];
+        vec.y = this.scene.view.srp.data[1][0] - this.scene.view.prp.data[1][0];
+        vec.z = this.scene.view.srp.data[2][0] - this.scene.view.prp.data[2][0];
+        vec = vec.cross(this.scene.view.vup);
+        vec.normalize();
+        this.scene.view.srp.data = [[this.scene.view.srp.data[0][0] + vec.x], [this.scene.view.srp.data[1][0] + vec.y], 
+            [this.scene.view.srp.data[2][0] + vec.z]];
+        this.scene.view.prp.data = [[this.scene.view.prp.data[0][0] + vec.x], [this.scene.view.prp.data[1][0] + vec.y], 
+            [this.scene.view.prp.data[2][0] + vec.z]];
     }
     
     //
     moveBackward() {
-
+        let vec = new Vector(3);
+        vec.x = this.scene.view.srp.data[0][0] - this.scene.view.prp.data[0][0];
+        vec.y = this.scene.view.srp.data[1][0] - this.scene.view.prp.data[1][0];
+        vec.z = this.scene.view.srp.data[2][0] - this.scene.view.prp.data[2][0];
+        vec.normalize();
+        this.scene.view.srp.data = [[this.scene.view.srp.data[0][0] - vec.x], [this.scene.view.srp.data[1][0] - vec.y], 
+            [this.scene.view.srp.data[2][0] - vec.z]];
+        this.scene.view.prp.data = [[this.scene.view.prp.data[0][0] - vec.x], [this.scene.view.prp.data[1][0] - vec.y], 
+            [this.scene.view.prp.data[2][0] - vec.z]];
     }
     
     //
     moveForward() {
-
+        let vec = new Vector(3);
+        vec.x = this.scene.view.srp.data[0][0] - this.scene.view.prp.data[0][0];
+        vec.y = this.scene.view.srp.data[1][0] - this.scene.view.prp.data[1][0];
+        vec.z = this.scene.view.srp.data[2][0] - this.scene.view.prp.data[2][0];
+        vec.normalize();
+        this.scene.view.srp.data = [[this.scene.view.srp.data[0][0] + vec.x], [this.scene.view.srp.data[1][0] + vec.y], 
+            [this.scene.view.srp.data[2][0] + vec.z]];
+        this.scene.view.prp.data = [[this.scene.view.prp.data[0][0] + vec.x], [this.scene.view.prp.data[1][0] + vec.y], 
+            [this.scene.view.prp.data[2][0] + vec.z]];
     }
 
     //
     draw() {
+        
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        let view = this.scene.view;
+        let viewTransform = CG.mat4x4Perspective(view.prp, view.srp, view.vup, view.clip);
+        
+        // project z=-1 then to canvas
+        let projection = CG.mat4x4MPer();
+        let viewport = CG.mat4x4Viewport(this.canvas.width, this.canvas.height);
 
-        // TODO: implement drawing here!
-        // For each model
-        //   * For each vertex
-        //     * transform endpoints to canonical view volume
-        //   * For each line segment in each edge
-        //     * clip in 3D
-        //     * project to 2D
-        //     * translate/scale to viewport (i.e. window)
-        //     * draw line
+        // near plane z by 1/far
+        let z_min = -view.clip[4] / view.clip[5];
+
+        for (let i = 0; i < this.scene.models.length; i++) {
+            let model = this.scene.models[i];
+
+            if(model.type == "cube"){
+                // center
+                let x = model.center.x;
+                let y = model.center.y;
+                let z = model.center.z;
+
+                let w = model.width / 2;
+                let h = model.height / 2;
+                let d = model.depth / 2;
+
+                model.vertices = [
+                    // front
+                    CG.Vector4(x - w, y - h, z + d, 1),
+                    CG.Vector4(x + w, y - h, z + d, 1),
+                    CG.Vector4(x + w, y + h, z + d, 1), 
+                    CG.Vector4(x - w, y + h, z + d, 1),
+
+                    // Back
+                    CG.Vector4(x - w, y - h, z - d, 1),
+                    CG.Vector4(x + w, y - h, z - d, 1),
+                    CG.Vector4(x + w, y + h, z - d, 1),
+                    CG.Vector4(x - w, y + h, z - d, 1)                 
+                ];
+
+                model.edges = [
+                    // front n' back
+                    [0, 1, 2, 3, 0],
+                    [4, 5, 6, 7, 4],
+
+                    // connecting edges
+                    [0, 4],
+                    [1, 5],
+                    [2, 6],
+                    [3, 7]
+                ];
+            }
+
+            else if(model.type == "cone"){
+
+            }
+            else if(model.type == "cylinder"){
+
+            }
+
+            else if(model.type == "sphere"){
+                let x = model.center.x;
+                let y = model.center.y;
+                let z = model.center.z;
+                let radius = model.radius;
+                let stacks = 12;
+                let slices = 16;
+                model.vertices = [];
+                model.edges = [];
+
+                // bottom to top vertices
+                for (let i = 0; i <= stacks; i++) {
+                    let phi = Math.PI * i / stacks;
+                    // vertices around horizontal circles
+                    for (let j = 0; j < slices; j++) {
+                        let theta = 2 * Math.PI * j / slices;
+                        let vx = x + radius * Math.sin(phi) * Math.cos(theta);
+                        let vy = y + radius * Math.cos(phi);
+                        let vz = z + radius * Math.sin(phi) * Math.sin(theta);     
+                        model.vertices.push(CG.Vector4(vx, vy, vz, 1));                    
+                    }
+                }   
+
+                // edges connect certices
+                for (let i = 0; i <= stacks; i++) {
+                    for (let j = 0; j < slices; j++) {
+                        let current = i * slices + j;
+                        let next = i * slices + (j + 1) % slices;
+
+                        // Horizontal edges around the sphere
+                        if (i > 0) {
+                            model.edges.push([current, next]);
+                        }
+
+                        // Vertical edges between stacks
+                        if (i < stacks) {
+                            let below = (i + 1) * slices + j;
+                            model.edges.push([current, below]);
+                        }
+                    }
+                }                
+            }
+
+            let transformedVertices = [];
+
+            //model transform first, then the view transform.
+            for (let j = 0; j < model.vertices.length; j++) {
+                let vertex = Matrix.multiply([
+                    viewTransform,
+                    model.matrix,
+                    model.vertices[j]
+                ]);
+
+                transformedVertices.push(vertex);
+            }
+
+            // edges = list -> vertix indices
+            for (let j = 0; j < model.edges.length; j++) {
+                let edge = model.edges[j];
+
+                // draw a segment between each consecutive pair.
+                for (let k = 0; k < edge.length - 1; k++) {
+                    let line = {
+                        pt0: transformedVertices[edge[k]],
+                        pt1: transformedVertices[edge[k + 1]]
+                    };
+
+                    // Jack my current code does NOT clip. when you get
+                    // clipping to work, uncomment the code line bellow
+                    // and delete the "let clippedLine = line"
+
+                    let clippedLine = this.clipLinePerspective(line, z_min);
+                    //let clippedLine = line;
+
+                    // rejected segments have nothing to draw. 
+                    if (clippedLine === null) {
+                        continue;
+                    }            
+
+                    let p0 = CG.Vector4(clippedLine.pt0.x, clippedLine.pt0.y, clippedLine.pt0.z, 1);
+                    let p1 = CG.Vector4(clippedLine.pt1.x, clippedLine.pt1.y, clippedLine.pt1.z, 1);
+
+                    p0 = Matrix.multiply([projection, p0]);
+                    p1 = Matrix.multiply([projection, p1]);         
+                    
+                    p0.scale(1 / p0.w);
+                    p1.scale(1 / p1.w);
+
+                    // converts to pixesl
+                    p0 = Matrix.multiply([viewport, p0]);
+                    p1 = Matrix.multiply([viewport, p1]);
+
+                    this.drawLine(p0.x, p0.y, p1.x, p1.y);
+
+
+
+            
+
+                }
+            }
+        }
     }
 
     // Get outcode for a vertex
@@ -104,17 +298,69 @@ class Renderer {
     // line:         object {pt0: Vector4, pt1: Vector4}
     // z_min:        float (near clipping plane in canonical view volume)
     clipLinePerspective(line, z_min) {
-        let result = null;
-        let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
-        let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
-        let out0 = this.outcodePerspective(p0, z_min);
-        let out1 = this.outcodePerspective(p1, z_min);
-        
-        // TODO: implement clipping here!
-        
-        return result;
-    }
 
+        let p0 = CG.Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
+        let p1 = CG.Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
+
+        while(true) {
+            let out0 = this.outcodePerspective(p0, z_min);
+            let out1 = this.outcodePerspective(p1, z_min);
+
+            if ((out0 | out1) === 0) {
+                return { pt0: p0, pt1: p1 };
+
+            } else if ((out0 & out1) !== 0) {
+                return null;
+
+                // Line needs to be clipped
+            } else {
+                let out;
+
+                // find which vertex needs to be worked on 
+                if (out0 !== 0) {
+                    out = out0;
+                } else {
+                    out = out1;
+                }
+
+                let delta_x = p1.x - p0.x;
+                let delta_y = p1.y - p0.y;
+                let delta_z = p1.z - p0.z;
+
+                let t = 0;
+
+                // gotta find which clipping plane outside and find where the line intersects
+                // last slide in 3D Clipping.pptx
+                if ((out & LEFT) !== 0) {
+                    t = (p0.z - p0.x) / (delta_x - delta_z);
+
+                } else if ((out & RIGHT) !== 0) {
+                    t = (-p0.z - p0.x) / (delta_x + delta_z);
+
+                } else if ((out & BOTTOM) !== 0) {
+                    t = (p0.z - p0.y) / (delta_y - delta_z);
+
+                } else if ((out & TOP) !== 0) {
+                    t = (-p0.z - p0.y) / (delta_y + delta_z);
+
+                } else if ((out &  FAR) !== 0) {
+                    t = (-1 - p0.z) / delta_z;
+
+                } else if ((out & NEAR) !== 0) {
+                    t = (z_min - p0.z) / delta_z;
+                }
+
+                let intersection = CG.Vector3(
+                    p0.x + t * delta_x, p0.y + t * delta_y, p0.z + t * delta_z);
+                
+                if (out == out0) {
+                    p0 = intersection;
+                } else {
+                    p1 = intersection;
+                }
+            }
+        }
+    }
     //
     animate(timestamp) {
         // Get time and delta time for animation
