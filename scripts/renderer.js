@@ -121,8 +121,42 @@ class Renderer {
             let model = this.scene.models[i];
 
             if(model.type == "cube"){
+                // center
+                let x = model.center.x;
+                let y = model.center.y;
+                let z = model.center.z;
 
+                let w = model.width / 2;
+                let h = model.height / 2;
+                let d = model.depth / 2;
+
+                model.vertices = [
+                    // front
+                    CG.Vector4(x - w, y - h, z + d, 1),
+                    CG.Vector4(x + w, y - h, z + d, 1),
+                    CG.Vector4(x + w, y + h, z + d, 1), 
+                    CG.Vector4(x - w, y + h, z + d, 1),
+
+                    // Back
+                    CG.Vector4(x - w, y - h, z - d, 1),
+                    CG.Vector4(x + w, y - h, z - d, 1),
+                    CG.Vector4(x + w, y + h, z - d, 1),
+                    CG.Vector4(x - w, y + h, z - d, 1)                 
+                ];
+
+                model.edges = [
+                    // front n' back
+                    [0, 1, 2, 3, 0],
+                    [4, 5, 6, 7, 4],
+
+                    // connecting edges
+                    [0, 4],
+                    [1, 5],
+                    [2, 6],
+                    [3, 7]
+                ];
             }
+
             else if(model.type == "cone"){
                 if(model.generated == false){
                     model.vertices.push(CG.Vector4(model.center.x, model.center.y + model.height, model.center.z, 1))
@@ -165,8 +199,48 @@ class Renderer {
                     model.generated = true;
                 }
             }
-            else if(model.type == "sphere"){
 
+            else if(model.type == "sphere"){
+                let x = model.center.x;
+                let y = model.center.y;
+                let z = model.center.z;
+                let radius = model.radius;
+                let stacks = 12;
+                let slices = 16;
+                model.vertices = [];
+                model.edges = [];
+
+                // bottom to top vertices
+                for (let i = 0; i <= stacks; i++) {
+                    let phi = Math.PI * i / stacks;
+                    // vertices around horizontal circles
+                    for (let j = 0; j < slices; j++) {
+                        let theta = 2 * Math.PI * j / slices;
+                        let vx = x + radius * Math.sin(phi) * Math.cos(theta);
+                        let vy = y + radius * Math.cos(phi);
+                        let vz = z + radius * Math.sin(phi) * Math.sin(theta);     
+                        model.vertices.push(CG.Vector4(vx, vy, vz, 1));                    
+                    }
+                }   
+
+                // edges connect certices
+                for (let i = 0; i <= stacks; i++) {
+                    for (let j = 0; j < slices; j++) {
+                        let current = i * slices + j;
+                        let next = i * slices + (j + 1) % slices;
+
+                        // Horizontal edges around the sphere
+                        if (i > 0) {
+                            model.edges.push([current, next]);
+                        }
+
+                        // Vertical edges between stacks
+                        if (i < stacks) {
+                            let below = (i + 1) * slices + j;
+                            model.edges.push([current, below]);
+                        }
+                    }
+                }                
             }
 
             let transformedVertices = [];
@@ -222,24 +296,7 @@ class Renderer {
 
 
 
-                    // Bellow is temp code to mark vertices to make it less
-                    // annoying to compare and preview the 3d model. idk how
-                    // to fix the flipped numbers without messing with the css
-                    
-                    this.ctx.fillStyle = '#0000FF';
-                    this.ctx.font = '14px Arial';
-
-                    this.ctx.fillText(
-                        edge[k].toString(),
-                        p0.x + 6,
-                        p0.y - 6
-                    );
-
-                    this.ctx.fillText(
-                        edge[k + 1].toString(),
-                        p1.x + 6,
-                        p1.y - 6
-                    );                    
+            
 
                 }
             }
