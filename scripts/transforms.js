@@ -56,7 +56,7 @@ function mat4x4Viewport(width, height) {
     let viewport = new Matrix(4, 4);
     viewport.values = 
     [[width / 2, 0,   0, width / 2 ],
-     [0, -height / 2, 0, height / 2],
+     [0, height / 2, 0, height / 2],
      [0, 0,           1,          0],
      [0, 0,           0,          1]];
     return viewport;

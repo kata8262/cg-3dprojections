@@ -150,7 +150,7 @@ class Renderer {
             for (let j = 0; j < model.edges.length; j++) {
                 let edge = model.edges[j];
 
-                // ddddddddddddddraw a segment between each consecutive pair.
+                // draw a segment between each consecutive pair.
                 for (let k = 0; k < edge.length - 1; k++) {
                     let line = {
                         pt0: transformedVertices[edge[k]],
@@ -161,8 +161,8 @@ class Renderer {
                     // clipping to work, uncomment the code line bellow
                     // and delete the "let clippedLine = line"
 
-                    //let clippedLine = this.clipLinePerspective(line, z_min);
-                    let clippedLine = line;
+                    let clippedLine = this.clipLinePerspective(line, z_min);
+                    //let clippedLine = line;
 
                     // rejected segments have nothing to draw. 
                     if (clippedLine === null) {
@@ -241,29 +241,69 @@ class Renderer {
     // line:         object {pt0: Vector4, pt1: Vector4}
     // z_min:        float (near clipping plane in canonical view volume)
     clipLinePerspective(line, z_min) {
-        let result = null;
-        let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
-        let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
-        let out0 = this.outcodePerspective(p0, z_min);
-        let out1 = this.outcodePerspective(p1, z_min);
-        
-        // TODO: implement clipping here!
-        if((parseInt(out0.toString(2), 2) | parseInt(out1.toString(2), 2)) == 0){
-            result = {
-                pt0: p0,
-                pt1: p1
-            };
-        }
-        else if((parseInt(out0.toString(2), 2) & parseInt(out1.toString(2), 2)) != 0){
-            //do nothing, result is already set to null
-        }
-        else{
 
+        let p0 = CG.Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
+        let p1 = CG.Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
+
+        while(true) {
+            let out0 = this.outcodePerspective(p0, z_min);
+            let out1 = this.outcodePerspective(p1, z_min);
+
+            if ((out0 | out1) === 0) {
+                return { pt0: p0, pt1: p1 };
+
+            } else if ((out0 & out1) !== 0) {
+                return null;
+
+                // Line needs to be clipped
+            } else {
+                let out;
+
+                // find which vertex needs to be worked on 
+                if (out0 !== 0) {
+                    out = out0;
+                } else {
+                    out = out1;
+                }
+
+                let delta_x = p1.x - p0.x;
+                let delta_y = p1.y - p0.y;
+                let delta_z = p1.z - p0.z;
+
+                let t = 0;
+
+                // gotta find which clipping plane outside and find where the line intersects
+                // last slide in 3D Clipping.pptx
+                if ((out & LEFT) !== 0) {
+                    t = (p0.z - p0.x) / (delta_x - delta_z);
+
+                } else if ((out & RIGHT) !== 0) {
+                    t = (-p0.z - p0.x) / (delta_x + delta_z);
+
+                } else if ((out & BOTTOM) !== 0) {
+                    t = (p0.z - p0.y) / (delta_y - delta_z);
+
+                } else if ((out & TOP) !== 0) {
+                    t = (-p0.z - p0.y) / (delta_y + delta_z);
+
+                } else if ((out &  FAR) !== 0) {
+                    t = (-1 - p0.z) / delta_z;
+
+                } else if ((out & NEAR) !== 0) {
+                    t = (z_min - p0.z) / delta_z;
+                }
+
+                let intersection = CG.Vector3(
+                    p0.x + t * delta_x, p0.y + t * delta_y, p0.z + t * delta_z);
+                
+                if (out == out0) {
+                    p0 = intersection;
+                } else {
+                    p1 = intersection;
+                }
+            }
         }
-        
-        return result;
     }
-
     //
     animate(timestamp) {
         // Get time and delta time for animation
