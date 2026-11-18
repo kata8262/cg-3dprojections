@@ -104,14 +104,14 @@ let initial_scene = {
         },
         { 
             type: 'cube',
-            center: [4, 4, -10],
+            center: [14, 19, -20],
             width: 8,
             height: 8,
             depth: 8
         },
         {
             type: 'sphere',
-            center: [4, 4, -20],
+            center: [4, 30, -20],
             radius: 4
         }
         /*
