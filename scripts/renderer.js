@@ -124,10 +124,46 @@ class Renderer {
 
             }
             else if(model.type == "cone"){
-
+                if(model.generated == false){
+                    model.vertices.push(CG.Vector4(model.center.x, model.center.y + model.height, model.center.z, 1))
+                    for(let i = 1; i <= model.sides; i++){
+                        let theta =  (i / model.sides) * Math.PI * 2;
+                        model.vertices.push(CG.Vector4(model.center.x + (model.radius * Math.cos(theta)), model.center.y, 
+                            model.center.z + (model.radius * Math.sin(theta)), 1));
+                        model.edges.push([i-1, i]);
+                        model.edges.push([i, 0]);
+                    }
+                    model.edges.push([1, model.sides]);
+                    model.generated = true;
+                }
             }
             else if(model.type == "cylinder"){
-
+                if(model.generated == false){
+                    for(let i = 0; i < model.sides; i++){
+                        let theta = (i/model.sides) * Math.PI * 2;
+                        model.vertices.push(CG.Vector4(model.center.x + (model.radius * Math.cos(theta)), 
+                            model.center.y - (model.height / 2),
+                            model.center.z + (model.radius * Math.sin(theta)), 1));
+                        if(i != 0){
+                            model.edges.push([i-1, i]);
+                        }
+                    }
+                    model.edges.push([0, (model.sides-1)]);
+                    for(let i = 0; i < model.sides; i++){
+                        let theta = (i/model.sides) * Math.PI * 2;
+                        model.vertices.push(CG.Vector4(model.center.x + (model.radius * Math.cos(theta)), 
+                            model.center.y + (model.height / 2),
+                            model.center.z + (model.radius * Math.sin(theta)), 1));
+                        if(i != 0){
+                            model.edges.push([i+model.sides-1, i+model.sides]);
+                        }
+                    }
+                    model.edges.push([model.sides, ((model.sides*2)-1)]);
+                    for(let i = 0; i < model.sides; i++){
+                        model.edges.push([i, i+model.sides]);
+                    }
+                    model.generated = true;
+                }
             }
             else if(model.type == "sphere"){
 

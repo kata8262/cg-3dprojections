@@ -81,6 +81,26 @@ let initial_scene = {
                 [3, 8],
                 [4, 9]
             ]
+        },
+        {
+            type: 'cone',
+            center: [0, 0, -90],
+            radius: 15,
+            height: 45,
+            sides: 12,
+            vertices: [],
+            edges: [],
+            generated: false
+        },
+        {
+            type: 'cylinder',
+            center: [-20, 0, -20],
+            radius: 15,
+            height: 20,
+            sides: 8,
+            vertices: [],
+            edges: [],
+            generated: false 
         }
     ]
 };
